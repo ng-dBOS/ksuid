@@ -5,7 +5,7 @@ import "errors"
 const (
 	// lexographic ordering (based on Unicode table) is 0-9A-Za-z
 	base62Characters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-	zeroString       = "000000000000000000000000000"
+	zeroString       = "000000000000000000000000000000000"
 	offsetUppercase  = 10
 	offsetLowercase  = 36
 )
@@ -30,17 +30,17 @@ func base62Value(digit byte) byte {
 // form into dst.
 //
 // In order to support a couple of optimizations the function assumes that src
-// is 20 bytes long and dst is 27 bytes long.
+// is 24 bytes long and dst is 33 bytes long.
 //
 // Any unused bytes in dst will be set to the padding '0' byte.
 func fastEncodeBase62(dst []byte, src []byte) {
 	const srcBase = 4294967296
 	const dstBase = 62
 
-	// Split src into 5 4-byte words, this is where most of the efficiency comes
+	// Split src into 6 4-byte words, this is where most of the efficiency comes
 	// from because this is a O(N^2) algorithm, and we make N = N / 4 by working
 	// on 32 bits at a time.
-	parts := [5]uint32{
+	parts := [6]uint32{
 		/*
 			These is an inlined version of:
 
@@ -49,6 +49,7 @@ func fastEncodeBase62(dst []byte, src []byte) {
 			  binary.BigEndian.Uint32(src[8:12]),
 			  binary.BigEndian.Uint32(src[12:16]),
 			  binary.BigEndian.Uint32(src[16:20]),
+			  binary.BigEndian.Uint32(src[20:24]),
 
 			For some reason it gave better performance, may be caused by the
 			bound check that the Uint32 function does.
@@ -58,18 +59,19 @@ func fastEncodeBase62(dst []byte, src []byte) {
 		uint32(src[8])<<24 | uint32(src[9])<<16 | uint32(src[10])<<8 | uint32(src[11]),
 		uint32(src[12])<<24 | uint32(src[13])<<16 | uint32(src[14])<<8 | uint32(src[15]),
 		uint32(src[16])<<24 | uint32(src[17])<<16 | uint32(src[18])<<8 | uint32(src[19]),
+		uint32(src[20])<<24 | uint32(src[21])<<16 | uint32(src[22])<<8 | uint32(src[23]),
 	}
 
 	n := len(dst)
 	bp := parts[:]
-	bq := [5]uint32{}
+	bq := [6]uint32{}
 
 	for len(bp) != 0 {
 		quotient := bq[:0]
 		remainder := uint64(0)
 
 		for _, c := range bp {
-			value := uint64(c) + uint64(remainder)*srcBase
+			value := uint64(c) + remainder*srcBase
 			digit := value / dstBase
 			remainder = value % dstBase
 
@@ -92,7 +94,7 @@ func fastEncodeBase62(dst []byte, src []byte) {
 
 // This function appends the base 62 representation of the KSUID in src to dst,
 // and returns the extended byte slice.
-// The result is left-padded with '0' bytes to always append 27 bytes to the
+// The result is left-padded with '0' bytes to always append 33 bytes to the
 // destination buffer.
 func fastAppendEncodeBase62(dst []byte, src []byte) []byte {
 	dst = reserve(dst, stringEncodedLength)
@@ -105,7 +107,7 @@ func fastAppendEncodeBase62(dst []byte, src []byte) []byte {
 // binary form into dst.
 //
 // In order to support a couple of optimizations the function assumes that src
-// is 27 bytes long and dst is 20 bytes long.
+// is 33 bytes long and dst is 24 bytes long.
 //
 // Any unused bytes in dst will be set to zero.
 func fastDecodeBase62(dst []byte, src []byte) error {
@@ -114,9 +116,9 @@ func fastDecodeBase62(dst []byte, src []byte) error {
 
 	// This line helps BCE (Bounds Check Elimination).
 	// It may be safely removed.
-	_ = src[26]
+	_ = src[32]
 
-	parts := [27]byte{
+	parts := [33]byte{
 		base62Value(src[0]),
 		base62Value(src[1]),
 		base62Value(src[2]),
@@ -146,6 +148,13 @@ func fastDecodeBase62(dst []byte, src []byte) error {
 		base62Value(src[24]),
 		base62Value(src[25]),
 		base62Value(src[26]),
+		base62Value(src[27]),
+		base62Value(src[28]),
+		base62Value(src[29]),
+
+		base62Value(src[30]),
+		base62Value(src[31]),
+		base62Value(src[32]),
 	}
 
 	n := len(dst)
@@ -157,7 +166,7 @@ func fastDecodeBase62(dst []byte, src []byte) error {
 		remainder := uint64(0)
 
 		for _, c := range bp {
-			value := uint64(c) + uint64(remainder)*srcBase
+			value := uint64(c) + remainder*srcBase
 			digit := value / dstBase
 			remainder = value % dstBase
 
@@ -178,7 +187,7 @@ func fastDecodeBase62(dst []byte, src []byte) error {
 		bp = quotient
 	}
 
-	var zero [20]byte
+	var zero [24]byte
 	copy(dst[:n], zero[:])
 	return nil
 }

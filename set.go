@@ -36,7 +36,7 @@ func (set CompressedSet) GoString() string {
 }
 
 func (set CompressedSet) writeTo(b *bytes.Buffer) {
-	a := [27]byte{}
+	a := [33]byte{}
 
 	for i, it := 0, set.Iter(); it.Next(); i++ {
 		if i != 0 {
@@ -61,7 +61,7 @@ func Compress(ids ...KSUID) CompressedSet {
 // build a KSUID set.
 //
 // Note that the set uses a compression technique to store the KSUIDs, so the
-// resuling length is not 20 x len(ids). The rule of thumb here is for the given
+// resuling length is not 24 x len(ids). The rule of thumb here is for the given
 // byte slice to reserve the amount of memory that the application would be OK
 // to waste.
 func AppendCompressed(set []byte, ids ...KSUID) CompressedSet {
@@ -92,10 +92,10 @@ func AppendCompressed(set []byte, ids ...KSUID) CompressedSet {
 
 			if t != timestamp {
 				d := t - timestamp
-				n := varintLength32(d)
+				n := varintLength64(d)
 
 				set = append(set, timeDelta|byte(n))
-				set = appendVarint32(set, d, n)
+				set = appendVarint64(set, d, n)
 				set = append(set, id[timestampLengthInBytes:]...)
 
 				timestamp = t
@@ -128,7 +128,7 @@ func AppendCompressed(set []byte, ids ...KSUID) CompressedSet {
 	return CompressedSet(set)
 }
 
-func rangeLength(ids []KSUID, timestamp uint32, lastKSUID KSUID, lastValue uint128) (length int, count int) {
+func rangeLength(ids []KSUID, timestamp uint64, lastKSUID KSUID, lastValue uint128) (length int, count int) {
 	one := makeUint128(0, 1)
 
 	for i := range ids {
@@ -263,7 +263,7 @@ type CompressedSetIter struct {
 	offset  int
 
 	seqlength uint64
-	timestamp uint32
+	timestamp uint64
 	lastValue uint128
 }
 
@@ -305,9 +305,9 @@ func (it *CompressedSetIter) Next() bool {
 		off1 := off0 + cnt
 		off2 := off1 + payloadLengthInBytes
 
-		it.timestamp += varint32(it.content[off0:off1])
+		it.timestamp += varint64(it.content[off0:off1])
 
-		binary.BigEndian.PutUint32(it.KSUID[:timestampLengthInBytes], it.timestamp)
+		binary.BigEndian.PutUint64(it.KSUID[:timestampLengthInBytes], it.timestamp)
 		copy(it.KSUID[timestampLengthInBytes:], it.content[off1:off2])
 
 		it.offset = off2

@@ -100,8 +100,8 @@ func TestParse(t *testing.T) {
 func TestIssue25(t *testing.T) {
 	// https://github.com/segmentio/ksuid/issues/25
 	for _, s := range []string{
-		"aaaaaaaaaaaaaaaaaaaaaaaaaaa",
-		"aWgEPTl1tmebfsQzFP4bxwgy80!",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aWgEPTl1tmebfsQzFP4bxwgy80!000000",
 	} {
 		_, err := Parse(s)
 		if err != errStrValue {
@@ -240,7 +240,7 @@ func TestSqlScanner(t *testing.T) {
 }
 
 func TestAppend(t *testing.T) {
-	for _, repr := range []string{"0pN1Own7255s7jwpwy495bAZeEa", "aWgEPTl1tmebfsQzFP4bxwgy80V"} {
+	for _, repr := range []string{"00u4asBqweEHOhfINVo3Kh7bMTgsey9iT", "2bUgEvAY0EyeUIKEQqRZAf1Lf36tlcaaD"} {
 		k, _ := Parse(repr)
 		a := make([]byte, 0, stringEncodedLength)
 
@@ -288,11 +288,11 @@ func TestPrevNext(t *testing.T) {
 		{
 			id:   Nil,
 			prev: Max,
-			next: KSUID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+			next: KSUID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 		},
 		{
 			id:   Max,
-			prev: KSUID{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe},
+			prev: KSUID{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe},
 			next: Nil,
 		},
 	}
@@ -308,8 +308,8 @@ func TestGetTimestamp(t *testing.T) {
 	nowTime := time.Now()
 	x, _ := NewRandomWithTime(nowTime)
 	xTime := int64(x.Timestamp())
-	unix := nowTime.Unix()
-	if xTime != unix - epochStamp {
+	unix := nowTime.UnixNano()
+	if xTime != unix-epochStamp {
 		t.Fatal(xTime, "!=", unix)
 	}
 }

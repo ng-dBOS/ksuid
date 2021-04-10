@@ -13,33 +13,33 @@ import (
 )
 
 const (
-	// KSUID's epoch starts more recently so that the 32-bit number space gives a
-	// significantly higher useful lifetime of around 136 years from March 2017.
-	// This number (14e8) was picked to be easy to remember.
-	epochStamp int64 = 1400000000
+	// KSUID's epoch starts more recently so that the 64-bit number space gives a
+	// significantly higher useful lifetime of around 136 years from May 2014.
+	// This number (14e17) was picked to be easy to remember.
+	epochStamp int64 = 1400000000000000000
 
-	// Timestamp is a uint32
-	timestampLengthInBytes = 4
+	// Timestamp is a uint64
+	timestampLengthInBytes = 8
 
 	// Payload is 16-bytes
 	payloadLengthInBytes = 16
 
-	// KSUIDs are 20 bytes when binary encoded
+	// KSUIDs are 24 bytes when binary encoded
 	byteLength = timestampLengthInBytes + payloadLengthInBytes
 
 	// The length of a KSUID when string (base62) encoded
-	stringEncodedLength = 27
+	stringEncodedLength = 33
 
 	// A string-encoded minimum value for a KSUID
-	minStringEncoded = "000000000000000000000000000"
+	minStringEncoded = "000000000000000000000000000000000"
 
 	// A string-encoded maximum value for a KSUID
-	maxStringEncoded = "aWgEPTl1tmebfsQzFP4bxwgy80V"
+	maxStringEncoded = "2lFA6LboL2xx0ldQH2K1TdSrwuqMMiME3"
 )
 
-// KSUIDs are 20 bytes:
-//  00-03 byte: uint32 BE UTC timestamp with custom epoch
-//  04-19 byte: random "payload"
+// KSUIDs are 24 bytes:
+//  00-07 byte: uint64 BE UTC (nano) timestamp with custom epoch
+//  08-23 byte: random "payload"
 type KSUID [byteLength]byte
 
 var (
@@ -55,7 +55,7 @@ var (
 	// Represents a completely empty (invalid) KSUID
 	Nil KSUID
 	// Represents the highest value a KSUID can have
-	Max = KSUID{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}
+	Max = KSUID{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}
 )
 
 // Append appends the string representation of i to b, returning a slice to a
@@ -71,8 +71,8 @@ func (i KSUID) Time() time.Time {
 
 // The timestamp portion of the ID as a bare integer which is uncorrected
 // for KSUID's special epoch.
-func (i KSUID) Timestamp() uint32 {
-	return binary.BigEndian.Uint32(i[:timestampLengthInBytes])
+func (i KSUID) Timestamp() uint64 {
+	return binary.BigEndian.Uint64(i[:timestampLengthInBytes])
 }
 
 // The 16-byte random payload without the timestamp
@@ -191,12 +191,14 @@ func Parse(s string) (KSUID, error) {
 	return FromBytes(dst[:])
 }
 
-func timeToCorrectedUTCTimestamp(t time.Time) uint32 {
-	return uint32(t.Unix() - epochStamp)
+func timeToCorrectedUTCTimestamp(t time.Time) uint64 {
+	return uint64(t.UnixNano() - epochStamp)
 }
 
-func correctedUTCTimestampToTime(ts uint32) time.Time {
-	return time.Unix(int64(ts)+epochStamp, 0)
+func correctedUTCTimestampToTime(ts uint64) time.Time {
+	ts += uint64(epochStamp)
+	sec := ts / 1e9
+	return time.Unix(int64(sec), int64(ts-sec*1e9))
 }
 
 // Generates a new KSUID. In the strange case that random bytes
@@ -231,7 +233,7 @@ func NewRandomWithTime(t time.Time) (ksuid KSUID, err error) {
 	}
 
 	ts := timeToCorrectedUTCTimestamp(t)
-	binary.BigEndian.PutUint32(ksuid[:timestampLengthInBytes], ts)
+	binary.BigEndian.PutUint64(ksuid[:timestampLengthInBytes], ts)
 	return
 }
 
@@ -244,14 +246,14 @@ func FromParts(t time.Time, payload []byte) (KSUID, error) {
 	var ksuid KSUID
 
 	ts := timeToCorrectedUTCTimestamp(t)
-	binary.BigEndian.PutUint32(ksuid[:timestampLengthInBytes], ts)
+	binary.BigEndian.PutUint64(ksuid[:timestampLengthInBytes], ts)
 
 	copy(ksuid[timestampLengthInBytes:], payload)
 
 	return ksuid, nil
 }
 
-// Constructs a KSUID from a 20-byte binary representation
+// Constructs a KSUID from a 24-byte binary representation
 func FromBytes(b []byte) (KSUID, error) {
 	var ksuid KSUID
 
@@ -336,7 +338,7 @@ func (id KSUID) Next() KSUID {
 	return v.ksuid(t)
 }
 
-// Prev returns the previoud KSUID before id.
+// Prev returns the previous KSUID before id.
 func (id KSUID) Prev() KSUID {
 	max := makeUint128(math.MaxUint64, math.MaxUint64)
 

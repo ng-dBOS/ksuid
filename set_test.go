@@ -58,25 +58,25 @@ func TestCompressedSet(t *testing.T) {
 }
 
 func testCompressedSetString(t *testing.T) {
-	id1, _ := Parse("0uHjRkQoL2JKAQIULPdqqb5fOkk")
-	id2, _ := Parse("0uHjRvkOG5CbtoXW5oCEp3L2xBu")
-	id3, _ := Parse("0uHjSJ4Pe5606kT2XWixK6dirlo")
+	id1, _ := Parse("00zRCO0KbGjXCl3hs0AN0THbl9LOOq0tc")
+	id2, _ := Parse("00zRCOHLAsWtlvi15W0sUnEevX9wYniKi")
+	id3, _ := Parse("00zRCOgr2IDhMPcagIvbmXod4G3tdfAPX")
 
 	set := Compress(id1, id2, id3)
 
-	if s := set.String(); s != `["0uHjRkQoL2JKAQIULPdqqb5fOkk", "0uHjRvkOG5CbtoXW5oCEp3L2xBu", "0uHjSJ4Pe5606kT2XWixK6dirlo"]` {
+	if s := set.String(); s != `["00zRCO0KbGjXCl3hs0AN0THbl9LOOq0tc", "00zRCOHLAsWtlvi15W0sUnEevX9wYniKi", "00zRCOgr2IDhMPcagIvbmXod4G3tdfAPX"]` {
 		t.Error(s)
 	}
 }
 
 func testCompressedSetGoString(t *testing.T) {
-	id1, _ := Parse("0uHjRkQoL2JKAQIULPdqqb5fOkk")
-	id2, _ := Parse("0uHjRvkOG5CbtoXW5oCEp3L2xBu")
-	id3, _ := Parse("0uHjSJ4Pe5606kT2XWixK6dirlo")
+	id1, _ := Parse("00zRCO0KbGjXCl3hs0AN0THbl9LOOq0tc")
+	id2, _ := Parse("00zRCOHLAsWtlvi15W0sUnEevX9wYniKi")
+	id3, _ := Parse("00zRCOgr2IDhMPcagIvbmXod4G3tdfAPX")
 
 	set := Compress(id1, id2, id3)
 
-	if s := set.GoString(); s != `ksuid.CompressedSet{"0uHjRkQoL2JKAQIULPdqqb5fOkk", "0uHjRvkOG5CbtoXW5oCEp3L2xBu", "0uHjSJ4Pe5606kT2XWixK6dirlo"}` {
+	if s := set.GoString(); s != `ksuid.CompressedSet{"00zRCO0KbGjXCl3hs0AN0THbl9LOOq0tc", "00zRCOHLAsWtlvi15W0sUnEevX9wYniKi", "00zRCOgr2IDhMPcagIvbmXod4G3tdfAPX"}` {
 		t.Error(s)
 	}
 }
