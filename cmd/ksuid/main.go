@@ -11,7 +11,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/ng-dBOS/ksuid"
+	"github.com/ng-dBOS/ksuid/v2"
 )
 
 var (

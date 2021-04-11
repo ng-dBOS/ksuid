@@ -1,3 +1,3 @@
-module github.com/ng-dBOS/ksuid
+module github.com/ng-dBOS/ksuid/v2
 
-go 1.12
+go 1.15
